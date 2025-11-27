@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typing Lesson</title>
+<style>
+  body {
+    background: #111;
+    color: #fff;
+    font-family: monospace;
+    display: flex;
+    justify-content: center;
+    padding: 30px;
+  }
+
+  .container {
+    width: 900px;
+    text-align: center;
+  }
+
+  h1 {
+    color: #38bdf8;
+    margin-bottom: 15px;
+  }
+
+  #lesson {
+    background: #161b22;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 22px;
+    line-height: 1.6;
+    max-height: 300px;
+    overflow-y: auto;
+    text-align: left;
+  }
+
+  .char {
+    display: inline-block;
+    padding: 2px 3px;
+    border-radius: 4px;
+  }
+
+  .correct { color: #4ade80; }
+  .incorrect { color: #fb7185; text-decoration: underline; }
+  .current { background: #38bdf8; color: #111; }
+
+  #progressContainer {
+    width: 100%;
+    height: 12px;
+    background: #222;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+
+  #progressBar {
+    height: 100%;
+    width: 0%;
+    background: #38bdf8;
+    transition: width 0.1s linear;
+  }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  button {
+    padding: 8px 18px;
+    font-size: 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #38bdf8;
+    color: #111;
+    font-weight: bold;
+  }
+
+  #accuracy {
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Typing Lesson – 3 Letter Groups</h1>
+
+  <div class="controls">
+    <button id="startBtn">Start</button>
+    <button id="resetBtn">Reset</button>
+    <span>Accuracy: <span id="accuracy">100%</span></span>
+  </div>
+
+  <div id="progressContainer">
+    <div id="progressBar"></div>
+  </div>
+
+  <div id="lesson" tabindex="0"></div>
+</div>
+
+<script>
+const letters = ["a","s","d","f","g","h","j","k","l",";","u","m","r","v"];
+let fullText = "";
+let typed = [];
+let index = 0;
+let totalTyped = 0;
+let correctCount = 0;
+let started = false;
+
+const lesson = document.getElementById('lesson');
+const accEl = document.getElementById('accuracy');
+const progressEl = document.getElementById('progressBar');
+const startBtn = document.getElementById('startBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+/* Generate 3-letter random groups */
+function generateText(groups = 200) {
+  let out = [];
+  for (let i=0;i<groups;i++){
+    let g = letters[Math.floor(Math.random()*letters.length)] +
+            letters[Math.floor(Math.random()*letters.length)] +
+            letters[Math.floor(Math.random()*letters.length)];
+    out.push(g);
+  }
+  return out.join(" ");
+}
+
+/* Render text into spans */
+function renderText() {
+  lesson.innerHTML = '';
+  fullText.split('').forEach((ch, i)=>{
+    const span = document.createElement('span');
+    span.className = 'char';
+    span.textContent = ch;
+    span.dataset.i = i;
+    lesson.appendChild(span);
+  });
+  highlightCurrent();
+  updateStats();
+}
+
+function highlightCurrent() {
+  const spans = lesson.querySelectorAll('.char');
+  spans.forEach(s => s.classList.remove('current','correct','incorrect'));
+  spans.forEach((s,i)=>{
+    if (i < index){
+      if (typed[i] === fullText[i]) s.classList.add('correct');
+      else s.classList.add('incorrect');
+    }
+  });
+  if (index < spans.length){
+    spans[index].classList.add('current');
+    // auto scroll
+    const r = spans[index].getBoundingClientRect();
+    const cr = lesson.getBoundingClientRect();
+    if (r.top < cr.top || r.bottom > cr.bottom){
+      lesson.scrollTop = spans[index].offsetTop - lesson.clientHeight/2 + spans[index].clientHeight/2;
+    }
+  }
+}
+
+function updateStats() {
+  const progress = (index/fullText.length)*100;
+  progressEl.style.width = progress + "%";
+  const accuracy = totalTyped === 0 ? 100 : Math.round((correctCount/totalTyped)*100);
+  accEl.textContent = accuracy + "%";
+}
+
+/* Start / Reset buttons */
+startBtn.onclick = () => {
+  if (!started){
+    fullText = generateText();
+    typed = [];
+    index = 0;
+    totalTyped = 0;
+    correctCount = 0;
+    started = true;
+    renderText();
+    lesson.focus();
+  }
+};
+
+resetBtn.onclick = () => {
+  fullText = generateText();
+  typed = [];
+  index = 0;
+  totalTyped = 0;
+  correctCount = 0;
+  renderText();
+  lesson.focus();
+};
+
+/* Keyboard input */
+document.addEventListener('keydown', (e)=>{
+  if (!started) return;
+  if (!fullText) return;
+  if (index >= fullText.length) return;
+
+  /* Prevent default scroll for spacebar */
+  if (e.key === " " || e.key === "Spacebar") {
+    e.preventDefault();
+  }
+
+  if (e.key === "Backspace"){
+    if (index>0){
+      index--;
+      typed.pop();
+      totalTyped++;
+      highlightCurrent();
+      updateStats();
+    }
+    return;
+  }
+
+  if (e.key.length === 1){
+    typed.push(e.key);
+    totalTyped++;
+    if (e.key === fullText[index]) correctCount++;
+    index++;
+    highlightCurrent();
+    updateStats();
+  }
+});
+</script>
+</body>
+</html>

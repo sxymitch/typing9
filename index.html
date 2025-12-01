@@ -116,7 +116,7 @@ const startBtn = document.getElementById('startBtn');
 const resetBtn = document.getElementById('resetBtn');
 
 /* Generate 3-letter random groups */
-function generateText(groups = 200) {
+function generateText(groups = 400) {
   let out = [];
   for (let i=0;i<groups;i++){
     let g = letters[Math.floor(Math.random()*letters.length)] +
@@ -226,3 +226,4 @@ document.addEventListener('keydown', (e)=>{
 </script>
 </body>
 </html>
+
